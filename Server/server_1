@@ -1,0 +1,76 @@
+// JSON Server. Depending on the inputs (32, 33, 34), the server sends json (in_2 const and = 1)
+
+#include <WiFi.h>
+#include <WebServer.h>
+#include <ArduinoJson.h>
+
+
+const char* ssid = "ssid";
+const char* password = "password";
+
+const int LED_PIN = 2; 
+const int input33 = 0; 
+const int input32 = 0; 
+const int input34 = 0; 
+
+const int actualInput33 = 33; 
+const int actualInput32 = 32; 
+const int actualInput34 = 34; 
+
+WebServer server(80);
+
+void handleRoot() {
+    int in_1 = digitalRead(actualInput34);
+    int in_2 = 1;
+    int in_3 = digitalRead(actualInput32);
+    int in_4 = digitalRead(actualInput33);
+
+    StaticJsonDocument<200> doc;
+    JsonArray rectangles = doc.createNestedArray("rectangles");
+    rectangles.add(in_1);
+    rectangles.add(in_2);
+    rectangles.add(in_3);
+    rectangles.add(in_4);
+
+    String response;
+    serializeJson(doc, response);
+
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.sendHeader("Access-Control-Allow-Methods", "GET");
+    server.send(200, "application/json", response);
+
+    Serial.println("The response has been sent: " + response);
+}
+
+void setup() {
+    pinMode(LED_PIN, OUTPUT);
+    pinMode(actualInput33, INPUT);
+    pinMode(actualInput32, INPUT);
+    pinMode(actualInput34, INPUT);
+
+    Serial.begin(9600);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.println("connecting to Wi-Fi...");
+    }
+
+    Serial.println("Connected to Wi-Fi");
+    Serial.print("Server IP address: ");
+    Serial.println(WiFi.localIP());
+
+    server.on("/", handleRoot);
+    server.begin();
+    Serial.println("ok !");
+}
+
+
+void loop() {
+    server.handleClient();
+    digitalWrite(LED_PIN, HIGH);
+    delay(100);
+    digitalWrite(LED_PIN, LOW);
+    delay(900);
+}
