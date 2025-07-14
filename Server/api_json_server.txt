@@ -1,0 +1,84 @@
+// api server for testing
+#include <Arduino.h>
+#ifdef ESP32
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
+#endif
+#include <ESPAsyncWebServer.h>
+#include <ArduinoJson.h>
+
+
+const char* ssid = "ssid";
+const char* password = "password";
+
+IPAddress local_IP(192, 168, 1, 100);
+IPAddress gateway(192, 168, 1, 1);
+IPAddress subnet(255, 255, 255, 0);
+#define LED_PIN 2 
+
+AsyncWebServer server(80); 
+
+void notFound(AsyncWebServerRequest *request) {
+    request->send(404, "text/plain", "-- Not found --");
+}
+
+void setup() {
+    pinMode(LED_PIN, OUTPUT);
+    Serial.begin(9600);
+    WiFi.mode(WIFI_STA);
+    WiFi.config(local_IP, gateway, subnet);
+    WiFi.begin(ssid, password);
+    if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+        Serial.printf("WiFi Failed!\n");
+        return;
+    }
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.localIP());
+
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+        StaticJsonDocument<200> jsonDoc;
+
+        jsonDoc["pass1"] = "pass_1";
+        jsonDoc["pass2"] = "pass_2";
+        jsonDoc["pass3"] = 12345;
+                
+        JsonArray jsonArray = jsonDoc.createNestedArray("color");
+        jsonArray.add("Silver");
+        jsonArray.add("Orange");
+        jsonArray.add("Red"); 
+        
+        JsonObject person1 = jsonArray.createNestedObject();
+        person1["name"] = "Bill";
+        person1["age"] = 38;
+
+        JsonObject person2 = jsonArray.createNestedObject();        
+        person2["name"] = "Marta";
+        person2["age"] = 31;
+        
+        JsonArray jsonArray_obj = jsonDoc.createNestedArray("air_obj");
+        JsonObject obj_1 = jsonArray_obj.createNestedObject();
+        obj_1["name"] = "Honda Aircraft Company";
+        obj_1["model"] = "HA-420 HondaJet";
+        JsonObject obj_2 = jsonArray_obj.createNestedObject();
+        obj_2["name"] = "Cesna";
+        obj_2["model"] = "Citation X";
+
+        String jsonResponse;
+        serializeJson(jsonDoc, jsonResponse); 
+        request->send(200, "application/json", jsonResponse);
+    });
+
+    server.onNotFound(notFound);
+
+    server.begin();
+}
+
+void loop() {
+  digitalWrite(LED_PIN, HIGH);  
+  delay(100);                 
+  digitalWrite(LED_PIN, LOW);   
+  delay(1000);  
+}
