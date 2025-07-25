@@ -1,4 +1,4 @@
-// It's WebSocket server. 
+// WebSocket server. 
 // It's sends a random number to the connected client every second and
 // has a log_file with info about connected clients (ip&port) 
 
